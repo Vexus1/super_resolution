@@ -13,3 +13,10 @@ def gaussian_blur(img: tf.Tensor, kernel: tf.Tensor) -> tf.Tensor:
     blur_img = tf.nn.depthwise_conv2d(img, kernel, [1, 1, 1, 1], "SAME")
     # blur_img = tf.cast(blur_img, tf.uint8)
     return blur_img[0]
+
+def synthesize_lr(hr_image: tf.Tensor, scale: int, kernel: tf.Tensor) -> tf.Tensor:
+    hr_image = gaussian_blur(hr_image, kernel)
+    h, w = tf.shape(hr_image)[0], tf.shape(hr_image)[1]
+    lr_hw = (h // scale, w // scale)
+    lr_image = tf.image.resize(hr_image, lr_hw, method="bicubic")
+    return tf.image.resize(lr_image, (h, w), "bicubic")
