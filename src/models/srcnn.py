@@ -5,8 +5,8 @@ import keras
 
 @dataclass
 class SRCNN:
-    kernel_sizes: tuple[int, int, int]
     filters: tuple[int, int, int]
+    kernel_sizes: tuple[int, int, int]
     input_channels: int
 
     def __post_init__(self):
