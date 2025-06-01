@@ -31,3 +31,14 @@ class TrainDataSet:
         img = tf.io.read_file(path)
         img = tf.image.decode_image(img, channels=3, expand_animations=False)
         return tf.image.convert_image_dtype(img, tf.float32)
+
+    def build(self) -> tf.data.Dataset:
+        ds = tf.data.Dataset.from_tensor_slices(self.paths).repeat()
+        ds = ds.map(self._load, tf.data.AUTOTUNE)
+        config, kernel = self.config, self.kernel
+        ds = ds.map(lambda hr_image: random_patch_pair(hr_image, config.scale,
+                                                       config.fsub, kernel),
+                                                        tf.data.AUTOTUNE)
+        ds = ds.shuffle(config.shuffle_buffer).batch(config.batch_size, drop_remainder=True)
+        return ds.prefetch(tf.data.AUTOTUNE)
+        
