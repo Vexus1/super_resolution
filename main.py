@@ -8,10 +8,9 @@ from src.models.srcnn import SRCNN
 from src.data.dataset import TrainsetConfig, TrainDataset, PairedConfig, PairedDataset 
 from src.metrics import PSNR
 
-
 def main() -> None:
     train_dataset = TrainDataset(
-        TrainsetConfig(dir=Path("dataset/train"))
+        TrainsetConfig(dir=Path("dataset/train"), batch_size=16)
     ).build()
     val_dataset = PairedDataset(
         PairedConfig(dir=Path("dataset/validation"), use_lr=False)
@@ -20,10 +19,10 @@ def main() -> None:
         PairedConfig(dir=Path("dataset/test"), use_lr=False)
     ).build()
 
-    model = SRCNN.variant_915(filters=(64, 32, 3), input_channels=3).model
-    model.compile(optimizer="adam",
+    model = SRCNN.variant_915(filters=(64, 32, 1), input_channels=1).model
+    model.compile(optimizer=keras.optimizers.Adam(1e-4),
                   loss="mse",
-                  metrics=[PSNR(max_val=1.0)])
+                  metrics=[PSNR(max_val=1.0, shave=4)])
 
     model.fit(train_dataset,
               steps_per_epoch=1000,

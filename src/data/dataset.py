@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 import tensorflow as tf
-from src.data.transforms import gaussian_kernel, synthesize_lr, random_patch_pair
+from src.data.transforms import *
 
 @dataclass(slots=True)
 class TrainsetConfig:
@@ -36,9 +36,11 @@ class TrainDataset:
         ds = tf.data.Dataset.from_tensor_slices(self.paths).repeat()
         ds = ds.map(self._load, tf.data.AUTOTUNE)
         config, kernel = self.config, self.kernel
-        ds = ds.map(lambda hr_image: random_patch_pair(hr_image, config.scale,
-                                                       config.fsub, kernel),
-                                                        tf.data.AUTOTUNE)
+        ds = ds.map(
+                    lambda hr: tuple(
+                        map(rgb_to_y,
+                            random_patch_pair(hr, config.scale, config.fsub, kernel))),
+                    tf.data.AUTOTUNE)
         ds = ds.shuffle(config.shuffle_buffer).batch(config.batch_size,
                                                      drop_remainder=True)
         return ds.prefetch(tf.data.AUTOTUNE)
@@ -86,17 +88,19 @@ class PairedDataset:
                                           tf.string)
         ds = tf.data.Dataset.from_tensor_slices((lr_tensor, hr_tensor))
         if self.config.use_lr:
-            def _pair(lr_path, hr_path):
-                lr = self._load(lr_path)
-                hr = self._load(hr_path)
-                hr_hw = tf.shape(hr)[:2]         
-                lr_up = tf.image.resize(lr, hr_hw, "bicubic")
-                return lr_up, hr
+            def _pair(lr_p, hr_p):
+                lr = rgb_to_y(self._load(lr_p))
+                hr = rgb_to_y(self._load(hr_p))
+                hr_hw = tf.shape(hr)[:2]
+                lr = tf.image.resize(lr, hr_hw, "bicubic")     # upsample LR → HR
+                return lr, hr
             ds = ds.map(_pair, tf.data.AUTOTUNE)
-        else: 
-            kernel, scale = self.kernel, self.config.scale
-            ds = ds.map(lambda _lr, hr: (synthesize_lr(self._load(hr),
-                                                  scale, kernel),
-                                    self._load(hr)), tf.data.AUTOTUNE)
+        else:
+            k, sc = self.kernel, self.config.scale
+            ds = ds.map(
+                lambda _lr, hr_p: (
+                    synthesize_lr(rgb_to_y(self._load(hr_p)), sc, k),
+                    rgb_to_y(self._load(hr_p))),
+                tf.data.AUTOTUNE)
         return ds.batch(self.config.batch_size).prefetch(tf.data.AUTOTUNE)
         

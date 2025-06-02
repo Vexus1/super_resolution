@@ -29,3 +29,7 @@ def random_patch_pair(hr_image: tf.Tensor, scale: int, fsub: int,
     hr_patch = tf.image.crop_to_bounding_box(hr_image, top, left, fsub, fsub)
     lr_patch = synthesize_lr(hr_patch, scale, kernel)
     return lr_patch, hr_patch
+
+def rgb_to_y(img: tf.Tensor) -> tf.Tensor:
+    yuv = tf.image.rgb_to_yuv(img)
+    return yuv[..., :1]
