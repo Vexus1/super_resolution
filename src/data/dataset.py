@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 import tensorflow as tf
-from transforms import gaussian_kernel, synthesize_lr, random_patch_pair
+from src.data.transforms import gaussian_kernel, synthesize_lr, random_patch_pair
 
 @dataclass(slots=True)
 class TrainsetConfig:
@@ -72,19 +72,31 @@ class PairedDataset:
         return tf.image.convert_image_dtype(img, tf.float32)
     
     def build(self) -> tf.data.Dataset:
-        lr_paths = [Path(self.config.dir, "LR", p.name) for p in self.hr_paths]
+        def _hr2lr(hr_path: Path) -> Path:
+            return Path(self.config.dir, "LR",
+                        hr_path.name.replace("_HR", "_LR"))
+        lr_paths = [_hr2lr(p) for p in self.hr_paths]
+        for lp in lr_paths:
+            if not lp.exists():
+                raise FileNotFoundError(f"No LP files: {lp}")
+
         hr_tensor = tf.convert_to_tensor([str(p) for p in self.hr_paths],
                                           tf.string)
-        lr_tensor = tf.convert_to_tensor([str(p) for p in lr_paths],
+        lr_tensor = tf.convert_to_tensor([str(p) for p in lr_paths], 
                                           tf.string)
         ds = tf.data.Dataset.from_tensor_slices((lr_tensor, hr_tensor))
         if self.config.use_lr:
-            ds = ds.map(lambda lr, hr: (self._load(lr), self._load(hr)),
-                        tf.data.AUTOTUNE)
-        else:
+            def _pair(lr_path, hr_path):
+                lr = self._load(lr_path)
+                hr = self._load(hr_path)
+                hr_hw = tf.shape(hr)[:2]         
+                lr_up = tf.image.resize(lr, hr_hw, "bicubic")
+                return lr_up, hr
+            ds = ds.map(_pair, tf.data.AUTOTUNE)
+        else: 
             kernel, scale = self.kernel, self.config.scale
-            ds = ds.map(lambda hr: (synthesize_lr(self._load(hr),
+            ds = ds.map(lambda _lr, hr: (synthesize_lr(self._load(hr),
                                                   scale, kernel),
-                                    self._load(hr), tf.data.AUTOTUNE))
+                                    self._load(hr)), tf.data.AUTOTUNE)
         return ds.batch(self.config.batch_size).prefetch(tf.data.AUTOTUNE)
         

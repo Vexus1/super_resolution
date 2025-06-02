@@ -10,7 +10,7 @@ class SRCNN:
     input_channels: int
 
     def __post_init__(self):
-        self._build_model()
+        self.model = self._build_model()
 
     def _build_model(self) -> keras.Model:
         model = keras.Sequential([
@@ -36,7 +36,7 @@ class SRCNN:
     
     @classmethod
     def variant_935(cls, **kwargs) -> Self:
-        return cls(kernel_sizes=(9, 3, 5), **kwargs)
+        return cls(kernel_sizes=(9, 3, 5), **kwargs) 
         
     @classmethod
     def variant_955(cls, **kwargs) -> Self:
