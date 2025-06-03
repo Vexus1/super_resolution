@@ -3,12 +3,14 @@ from pathlib import Path
 
 import tensorflow as tf
 from src.data.transforms import *
+from hparams import BlurHP
 
 BORDER = 6 # 9-1-5
 
 @dataclass(slots=True)
 class TrainsetConfig:
     dir: Path
+    blur: BlurHP
     scale: int = 2
     fsub: int = 33
     batch_size: int = 16
@@ -20,7 +22,8 @@ class TrainDataset:
     config: TrainsetConfig
     
     def __post_init__(self):
-        self.kernel = gaussian_kernel(kernel_size=13, sigma=1.6)
+        self.kernel = gaussian_kernel(self.config.blur.kernel_size,
+                                      self.config.blur.sigma)
         self.paths = self._get_paths()
     
     def _get_paths(self) -> tf.Tensor:
@@ -55,6 +58,7 @@ class TrainDataset:
 @dataclass(slots=True)
 class PairedConfig:
     dir: Path
+    blur: BlurHP
     use_lr: bool = True
     scale: int = 2
     batch_size: int = 1
@@ -65,7 +69,8 @@ class PairedDataset:
     config: PairedConfig
 
     def __post_init__(self):
-        self.kernel = gaussian_kernel(kernel_size=13, sigma=1.6)
+        self.kernel = gaussian_kernel(self.config.blur.kernel_size,
+                                      self.config.blur.sigma)
         hr_dir = Path(self.config.dir, "HR")
         lr_dir = Path(self.config.dir, "LR")
         self.hr_paths = sorted(hr_dir.glob("*"))
