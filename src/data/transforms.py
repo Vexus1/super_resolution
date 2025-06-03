@@ -36,3 +36,20 @@ def rgb_to_y(img: tf.Tensor) -> tf.Tensor:
 
 def crop_border(img: tf.Tensor, border: int) -> tf.Tensor:
     return img[border:-border, border:-border, :]
+
+def augment_pair(lr: tf.Tensor,
+                 hr: tf.Tensor) -> tuple[tf.Tensor, tf.Tensor]:
+    do_lr = tf.random.uniform([], 0, 1) < 0.5
+    lr = tf.cond(do_lr, lambda: tf.image.flip_left_right(lr), lambda: lr)
+    hr = tf.cond(do_lr, lambda: tf.image.flip_left_right(hr), lambda: hr)
+
+    do_ud = tf.random.uniform([], 0, 1) < 0.5
+    lr = tf.cond(do_ud, lambda: tf.image.flip_up_down(lr), lambda: lr)
+    hr = tf.cond(do_ud, lambda: tf.image.flip_up_down(hr), lambda: hr)
+    
+    k = tf.random.uniform([], 0, 4, dtype=tf.int32)
+    lr = tf.image.rot90(lr, k)
+    hr = tf.image.rot90(hr, k)
+    return lr, hr
+
+

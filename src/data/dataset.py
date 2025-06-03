@@ -41,6 +41,7 @@ class TrainDataset:
         def _make_pair(hr_img):
             lr_p, hr_p = random_patch_pair(hr_img, config.scale,
                                            config.fsub, kernel)
+            lr_p, hr_p = augment_pair(lr_p, hr_p)
             lr_p = rgb_to_y(lr_p)                          # [33, 33, 1]
             hr_p = crop_border(rgb_to_y(hr_p), BORDER)     # [21, 21, 1]
             return lr_p, hr_p
