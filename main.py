@@ -39,10 +39,10 @@ class Train:
         self.test_ds = PairedDataset(
            PairedConfig(dir=self.data_hp.root / "test",
                         blur=self.blur_hp, use_lr=False)
-        )
+        ).build()
 
     def _model(self) -> None:
-        self.model = SRCNN.variant_915(
+        self.model = SRCNN.variant_935(
             filters=self.model_hp.filters,
             input_channels=self.model_hp.input_channels
         ).model
