@@ -33,3 +33,6 @@ def random_patch_pair(hr_image: tf.Tensor, scale: int, fsub: int,
 def rgb_to_y(img: tf.Tensor) -> tf.Tensor:
     yuv = tf.image.rgb_to_yuv(img)
     return yuv[..., :1]
+
+def crop_border(img: tf.Tensor, border: int) -> tf.Tensor:
+    return img[border:-border, border:-border, :]

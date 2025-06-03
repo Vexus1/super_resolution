@@ -20,11 +20,16 @@ def main() -> None:
     ).build()
 
     model = SRCNN.variant_915(filters=(64, 32, 1), input_channels=1).model
-    lr_schedule = keras.callbacks.ReduceLROnPlateau(factor=0.5, patience=10, min_lr=1e-6)
-    checkpoint = keras.callbacks.ModelCheckpoint("best.h5", save_best_only=True, monitor="val_psnr_Y")
+    lr_schedule = keras.callbacks.ReduceLROnPlateau(factor=0.5,
+                                                    patience=10,
+                                                    min_lr=1e-6)
+    checkpoint = keras.callbacks.ModelCheckpoint("best.keras",
+                                                 save_best_only=True,
+                                                 monitor="val_psnr",
+                                                 mode="max")
     model.compile(optimizer=keras.optimizers.Adam(1e-4),
                   loss="mse",
-                  metrics=[PSNR(max_val=1.0, shave=4)])
+                  metrics=[PSNR(max_val=1.0, shave=0)])
 
     model.fit(train_dataset,
               steps_per_epoch=1000,
@@ -37,4 +42,4 @@ def main() -> None:
 
 if __name__ == '__main__':
     os.chdir(os.path.dirname(os.path.abspath(__file__)))
-    print(main())
+    main()

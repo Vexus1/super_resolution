@@ -18,15 +18,15 @@ class SRCNN:
             keras.layers.Conv2D(filters=self.filters[0],
                                 kernel_size=self.kernel_sizes[0],
                                 activation="relu",
-                                padding="same"),
+                                padding="valid"),
             keras.layers.Conv2D(filters=self.filters[1],
                                 kernel_size=self.kernel_sizes[1],
                                 activation='relu',
-                                padding="same"),
+                                padding="valid"),
             keras.layers.Conv2D(filters=self.filters[2],
                                 kernel_size=self.kernel_sizes[2],
                                 activation="linear",
-                                padding="same")
+                                padding="valid")
         ])
         return model
     

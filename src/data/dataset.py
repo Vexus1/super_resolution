@@ -4,6 +4,8 @@ from pathlib import Path
 import tensorflow as tf
 from src.data.transforms import *
 
+BORDER = 6 # 9-1-5
+
 @dataclass(slots=True)
 class TrainsetConfig:
     dir: Path
@@ -36,11 +38,14 @@ class TrainDataset:
         ds = tf.data.Dataset.from_tensor_slices(self.paths).repeat()
         ds = ds.map(self._load, tf.data.AUTOTUNE)
         config, kernel = self.config, self.kernel
-        ds = ds.map(
-                    lambda hr: tuple(
-                        map(rgb_to_y,
-                            random_patch_pair(hr, config.scale, config.fsub, kernel))),
-                    tf.data.AUTOTUNE)
+        def _make_pair(hr_img):
+            lr_p, hr_p = random_patch_pair(hr_img, config.scale,
+                                           config.fsub, kernel)
+            lr_p = rgb_to_y(lr_p)                          # [33, 33, 1]
+            hr_p = crop_border(rgb_to_y(hr_p), BORDER)     # [21, 21, 1]
+            return lr_p, hr_p
+
+        ds = ds.map(_make_pair, tf.data.AUTOTUNE)
         ds = ds.shuffle(config.shuffle_buffer).batch(config.batch_size,
                                                      drop_remainder=True)
         return ds.prefetch(tf.data.AUTOTUNE)
@@ -92,15 +97,16 @@ class PairedDataset:
                 lr = rgb_to_y(self._load(lr_p))
                 hr = rgb_to_y(self._load(hr_p))
                 hr_hw = tf.shape(hr)[:2]
-                lr = tf.image.resize(lr, hr_hw, "bicubic")     # upsample LR → HR
-                return lr, hr
+                lr = tf.image.resize(lr, hr_hw, "bicubic") 
+                return lr, crop_border(hr, BORDER)
             ds = ds.map(_pair, tf.data.AUTOTUNE)
         else:
-            k, sc = self.kernel, self.config.scale
+            kernel, scale = self.kernel, self.config.scale
             ds = ds.map(
                 lambda _lr, hr_p: (
-                    synthesize_lr(rgb_to_y(self._load(hr_p)), sc, k),
-                    rgb_to_y(self._load(hr_p))),
-                tf.data.AUTOTUNE)
+                    synthesize_lr(rgb_to_y(self._load(hr_p)), scale, kernel),
+                    crop_border(rgb_to_y(self._load(hr_p)), BORDER)),
+                    tf.data.AUTOTUNE
+                )
         return ds.batch(self.config.batch_size).prefetch(tf.data.AUTOTUNE)
         
