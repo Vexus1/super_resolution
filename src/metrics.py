@@ -10,7 +10,7 @@ class PSNR(keras.metrics.Mean):
 
     def update_state(self, y_true: tf.Tensor, y_pred: tf.Tensor,
                      sample_weight: tf.Tensor | None = None) -> tf.Tensor:
-        if self.shave: 
+        if self.shave:
             s = self.shave
             y_true = y_true[:, s:-s, s:-s, :]
             y_pred = y_pred[:, s:-s, s:-s, :]
