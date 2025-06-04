@@ -10,7 +10,7 @@
 \usepackage{booktabs}
 \usepackage{caption}
 \usepackage{subcaption}
-\usepackage{hyperref}
+\usepackage[hidelinks]{hyperref}
 \usepackage{geometry}
 \usepackage{float}
 
@@ -19,13 +19,13 @@
 % ─────────────────────────────────────────────────────────────
 \title{\textbf{Super-Resolution metodą SRCNN}\\%
        \large Sprawozdanie projektowe}
-\author{Adrian N.~(Twoje nazwisko)}
+\author{Adrian Galik}
 \date{\today}
 
 \begin{document}
 \maketitle
 \begin{abstract}
-Celem pracy było zaimplementowanie i przetestowanie klasycznej sieci
+\noindent Celem pracy było zaimplementowanie i przetestowanie klasycznej sieci
 \emph{SRCNN} (Super-Resolution Convolutional Neural Network) zgodnie z artykułem
 \emph{Image Super-Resolution Using Deep Convolutional Networks} (Dong et al.,
 2014).  Model przetwarza niskorozdzielczy obraz (LR), uprzednio powiększony
@@ -43,7 +43,7 @@ na zestawie \textbf{T91}, walidację na \textbf{Set14}, a test końcowy na
 Niech $I_\mathrm{HR}\!\in\!\mathbb R^{H\times W}$ będzie obrazem
 wysokiej rozdzielczości (kanał~Y), a $I_\mathrm{LR}$ jego
 zdegradowaną wersją otrzymaną przez filtrację, down-/up-samplowanie
-% (\S\ref{sec:data}).  
+(\S\ref{sec:data}).  
 Celem sieci jest znalezienie funkcji
 \begin{equation}
   F_\Theta : \; I_\mathrm{LR}\;\longrightarrow\; I_\mathrm{SR},
@@ -52,12 +52,10 @@ parametryzowanej wagami $\Theta$, która minimalizuje błąd rekonstrukcji
 między obrazem odtworzonym $I_\mathrm{SR}=F_\Theta(I_\mathrm{LR})$ a prawdą
 $\,I_\mathrm{HR}$.
 
-% \subsection{Architektura 3-warstwowa \cite{dong2014}}
-\subsection{Architektura 3-warstwowa}
+\subsection{Architektura 3-warstwowa \cite{dong2014}}
 
 Dong \emph{et al.} zaproponowali najmniejszą możliwą sieć
 konwolucyjną wykonującą trzy etapy
-%  (rys.~\ref{fig:srcnn_arch})
 \footnote{
 W oryginale liczby filtrów to $(64,32,1)$; w projekcie stosujemy
 rozszerzoną wersję $(128,64,1)$
@@ -119,22 +117,61 @@ Oryginalnie trenowano w MSE; my stosujemy przybliżenie Charbonniera
   \item \textbf{Padding=\textsc{valid}} eliminuje artefakty przy krawędziach,
         kosztem konieczności przycięcia obrazu przy ewaluacji.
 \end{itemize}
-
 \subsection{Złożoność obliczeniowa}
+\label{sec:flops}
 
-Całkowita liczba FLOPs na pojedynczy patch
-% (\SI{33}{\px}$\times$\SI{33}{\px}) 
-wynosi\footnote{
-dla $(128,64,1)$; $\operatorname{FLOPs}=2\,HW(d_\text{in}+d_\text{out})k^2$.}
-\begin{align*}
-  &9^2\cdot128 \;+\;
-   1^2\cdot128\cdot64 \;+\;
-   5^2\cdot64   \;=\; \mathbf{115\,968}, \quad%%% <--- sprawdź arytmetykę
-\end{align*}
-co pozwala trenować z batch=\num{128} na RTX 2080 w czasie \textasciitilde\!%
-\SI{35}{\second} na epokę (\num{1000} iteracji).
+\paragraph{Liczba parametrów (wariant 9-1-5).}
 
-%%% <--- jeśli chcesz, możesz podstawić własne FLOPs po dokładnym policzeniu.
+\[
+  9^{2}\!\cdot\!128
+  \;+\;
+  1^{2}\!\cdot\!128\!\cdot\!64
+  \;+\;
+  5^{2}\!\cdot\!64
+  \;=\;
+  \mathbf{20\,160}.
+\]
+
+Każda waga odpowiada jednemu mnożeniu w operacji MAC
+(\emph{multiply–accumulate}).
+
+\bigskip
+\paragraph{FLOPs na pojedynczy patch \(33\times33\).}
+
+Dla konwolucji \(\text{Conv2D}\) z padding~=~\texttt{valid} rozmiar wyjścia
+wynosi
+\[
+  H_\text{out}=H_\text{in}-k+1,\qquad
+  W_\text{out}=W_\text{in}-k+1,
+\]
+a całkowita liczba FLOPs:
+
+\[
+  \text{FLOPs}=2\;H_\text{out}W_\text{out}\,k^{2}C_\text{in}C_\text{out}.
+\]
+
+\begin{table}[h]
+\centering
+\begin{tabular}{@{}lccccc@{}}
+\toprule
+Warstwa & $k$ & $C_\text{in}\!\times C_\text{out}$ &
+$H_\text{out}\!\times W_\text{out}$ & MAC [M] & FLOPs [M] \\ \midrule
+Conv1 & 9 & $1\times 128$   & $25\times25$ & 6.48 & 12.96 \\
+Conv2 & 1 & $128\times 64$  & $25\times25$ & 5.12 & 10.24 \\
+Conv3 & 5 & $64\times 1$    & $21\times21$ & 0.71 & 1.41  \\ \midrule
+\multicolumn{5}{r}{\textbf{Razem}} & \textbf{18.79} \\
+\bottomrule
+\end{tabular}
+\caption{Pełna liczba FLOPs dla patcha \(33\times33\) (wariant 9-1-5).}
+\label{tab:flops}
+\end{table}
+
+\paragraph{Interpretacja.}
+RTX 2080 osiąga w FP32 około \(7\!\times\!10^{12}\) FLOPs/s, więc
+przetworzenie batcha \(128\) patchy (\(\approx 128\!\times18.8\;\text{MF}\))
+trwa w przybliżeniu \(0.45\) ms, co przekłada się na
+około \(35\) s na epokę (1000 iteracji), zgodnie z pomiarem czasu w
+rozdziale~\ref{sec:train}.
 
 \bigskip
 Omówiona architektura stanowi punkt wyjścia; 
@@ -161,19 +198,6 @@ Set5    & 5  & $\approx 500\!\times\!500$ & test (full-frame) \\ \bottomrule
 \label{tab:datasets}
 \end{table}
 
-\paragraph{Struktura katalogów.}
-Pary HR/LR przechowujemy zgodnie z konwencją
-
-\begin{verbatim}
-dataset/
-  train/              # T91   (91 × HR)
-  validation/
-    HR/*.png          # Set14 HR
-    LR/*.png          # Set14 LR (bicubic, x2)
-  test/
-    HR/*.png          # Set5  HR
-    LR/*.png          # Set5  LR
-\end{verbatim}
 
 \subsection{Model degradacji (HR $\rightarrow$ LR)}
 \label{sec:data_degradation}
@@ -199,12 +223,13 @@ g_\sigma(x,y)=\frac{1}{2\pi\sigma^{2}}\;
 Implementacja w \texttt{transforms.gaussian\_blur()} (\textsc{depthwise conv2d}).
 
 %─────────────────────────────────────────────────────────────────
-\subsection{Pipeline treningowy (krok-po-kroku)}
+\subsection{Pipeline treningowy}
 \label{sec:data_pipeline}
 
 Dla każdej iteracji treningu generowana jest para
-\((I_\mathrm{LR}, I_\mathrm{HR})\) zgodnie z diagramem
-na rys.\,\ref{fig:pipeline}.  Poniżej opisujemy szczegółowo wszystkie
+\((I_\mathrm{LR}, I_\mathrm{HR})\)
+% zgodnie z diagramem na rys.\,\ref{fig:pipeline}.
+Poniżej opisujemy szczegółowo wszystkie
 etapy; implementację zawiera funkcja
 \texttt{transforms.random\_patch\_pair()}.
 
@@ -261,14 +286,14 @@ Stosujemy te same transformacje do LR i HR, aby zachować spójność pary:
 \end{tabular}
 \end{center}
 
-\noindent
-Pseudokod (\texttt{TensorFlow v2}):
+% \noindent
+% Pseudokod (\texttt{TensorFlow v2}):
 
-\begin{verbatim}
-if tf.rand() < .5: lr, hr = tf.image.flip_left_right(lr), ...
-k = tf.random.uniform([], 0, 4, tf.int32)
-lr, hr = tf.image.rot90(lr, k), tf.image.rot90(hr, k)
-\end{verbatim}
+% \begin{verbatim}
+% if tf.rand() < .5: lr, hr = tf.image.flip_left_right(lr), ...
+% k = tf.random.uniform([], 0, 4, tf.int32)
+% lr, hr = tf.image.rot90(lr, k), tf.image.rot90(hr, k)
+% \end{verbatim}
 
 Augmentacje zwiększają różnorodność danych 8-krotnie, co podnosi PSNR
 o około 0.2 dB.
@@ -361,49 +386,49 @@ Wszystkie warstwy wykorzystują \texttt{padding=valid};
 dlatego \(k_i\neq1\) skracają obraz o \((k_i-1)\)~pikseli z każdej
 krawędzi.  
 
-\subsection{Trzy warianty jądra pośredniego}
+% \subsection{Trzy warianty jądra pośredniego}
 
 
-\begin{table}[h]
-\centering
-\sisetup{output-exponent-marker=\ensuremath{\mathrm{e}}}
-\begin{tabular}{@{}lcccS[scientific-notation=true]@{}}
-\toprule
-Wariant & $k_1, k_2, k_3$ & Receptive field [px] &
-Parametry (wagi + bias) & {FLOPs / patch$^\dagger$} \\
-\midrule
-SRCNN–915 & 9, 1, 5 & $6$ & $20\,160 + 193 = \mathbf{20\,353}$ & 1.16e5 \\
-SRCNN–935 & 9, 3, 5 & $7$ & $85\,696 + 193 = 85\,889$          & 4.00e5 \\
-SRCNN–955 & 9, 5, 5 & $8$ & $216\,768 + 193 = 216\,961$        & 1.02e6 \\
-\bottomrule
-\end{tabular}
-\caption{Porównanie trzech konfiguracji. Receptive field to 
-$\frac{1}{2} \sum_i (k_i - 1)$. $^\dagger$~FLOPs dla patcha 
-$33 \times 33$: $2 \cdot 33 \cdot 33 \cdot (64 + 32) \cdot 9^2$, 
-zgodnie ze wzorem $2HW(d_\text{in} + d_\text{out})k^2$.}
-\label{tab:variants}
-\end{table}
+% \begin{table}[h]
+% \centering
+% \sisetup{output-exponent-marker=\ensuremath{\mathrm{e}}}
+% \begin{tabular}{@{}lcccS[scientific-notation=true]@{}}
+% \toprule
+% Wariant & $k_1, k_2, k_3$ & Receptive field [px] &
+% Parametry (wagi + bias) & {FLOPs / patch$^\dagger$} \\
+% \midrule
+% SRCNN–915 & 9, 1, 5 & $6$ & $20\,160 + 193 = \mathbf{20\,353}$ & 1.16e5 \\
+% SRCNN–935 & 9, 3, 5 & $7$ & $85\,696 + 193 = 85\,889$          & 4.00e5 \\
+% SRCNN–955 & 9, 5, 5 & $8$ & $216\,768 + 193 = 216\,961$        & 1.02e6 \\
+% \bottomrule
+% \end{tabular}
+% \caption{Porównanie trzech konfiguracji. Receptive field to 
+% $\frac{1}{2} \sum_i (k_i - 1)$. $^\dagger$~FLOPs dla patcha 
+% $33 \times 33$: $2 \cdot 33 \cdot 33 \cdot (64 + 32) \cdot 9^2$, 
+% zgodnie ze wzorem $2HW(d_\text{in} + d_\text{out})k^2$.}
+% \label{tab:variants}
+% \end{table}
 
-\paragraph{Wpływ rozmiaru $k_2$.}
-Zwiększenie $k_2$ z 1 do 3 i 5 rozwija okołopikselowe zależności
-(„rekodowanie” cech), ale liczba parametrów rośnie kwadratowo
-\(\mathcal O(k_2^2)\).
-W praktyce 
-% (\S\ref{sec:results})
- wariant 9-3-5 podnosi PSNR
-o \(\approx\)~\SI{0.2}{dB}, a 9-5-5 – kolejne \(\approx\)~\SI{0.1}{dB},
-kosztem 5× większej złożoności względem bazowego 9-1-5.
+% \paragraph{Wpływ rozmiaru $k_2$.}
+% Zwiększenie $k_2$ z 1 do 3 i 5 rozwija okołopikselowe zależności
+% („rekodowanie” cech), ale liczba parametrów rośnie kwadratowo
+% \(\mathcal O(k_2^2)\).
+% W praktyce 
+% % (\S\ref{sec:results})
+%  wariant 9-3-5 podnosi PSNR
+% o \(\approx\)~\SI{0.2}{dB}, a 9-5-5 – kolejne \(\approx\)~\SI{0.1}{dB},
+% kosztem 5× większej złożoności względem bazowego 9-1-5.
 
-\paragraph{Dobór \textit{border}.}
-Do ewaluacji PSNR obcinamy z HR po \(\text{border}=
-\smash{\tfrac12\!\sum_i(k_i-1)}\) pikseli.  
-Dzięki temu w każdym wariancie tensor~\(I_\mathrm{SR}\) i \(\,
-I_\mathrm{HR}\) mają identyczne rozmiary.
+% \paragraph{Dobór \textit{border}.}
+% Do ewaluacji PSNR obcinamy z HR po \(\text{border}=
+% \smash{\tfrac12\!\sum_i(k_i-1)}\) pikseli.  
+% Dzięki temu w każdym wariancie tensor~\(I_\mathrm{SR}\) i \(\,
+% I_\mathrm{HR}\) mają identyczne rozmiary.
 
-\bigskip
-W następnych rozdziałach porównamy trzy warianty na tych samych danych
-oraz przedyskutujemy zależność dokładności od receptive field
-i pojemności modelu.
+% \bigskip
+% W następnych rozdziałach porównamy trzy warianty na tych samych danych
+% oraz przedyskutujemy zależność dokładności od receptive field
+% i pojemności modelu.
 
 
 \newpage
@@ -496,18 +521,7 @@ $33 \times 33, $, batch 128:
 \text{patch/s}=\num{2900}.
 \]
 
-Po włączeniu mixed precision liczba iteracji na sekundę rośnie
-o \SI{24}{\percent}.  Całościowy czas treningu
-$\approx$\,\SI{2.5}{h}; bez FP16 wydłużyłby się do
-$\approx$\,\SI{3.3}{h}.
 
-\bigskip
-Konfiguracja z tabeli
-% ~\ref{tab:hparams}
- będzie podstawą do porównania
-trzech wariantów jądra w~
-% \S\ref{sec:results}
-.
 
 %─────────────────────────────────────────────────────────────────
 \section{Wyniki eksperymentów}
@@ -596,25 +610,39 @@ SRCNN 9-5-5  & \textbf{35.82} \\ \bottomrule
 \end{itemize}
 %──────────────
 
+%─────────────────────────────────────────────────────────────────
 \subsection{Wizualne porównanie}
 
-% \begin{figure}[h]
-% \centering
-% \includegraphics[width=.95\linewidth]{sr_comparison_bird.pdf}%%% <--- wstaw własny kolaż
-% \caption{Fragment obrazu \emph{Bird} (Set5,~$\times2$).  
-%    Wariant~9-3-5 lepiej odzyskuje pióra, bez nadmiernego wyostrzania.
-%    Różnica PSNR dla samego cropa: \SI{1.4}{dB}.}
-% \label{fig:vis_bird}
-% \end{figure}
+\begin{figure}[H]
+\centering
+\captionsetup[subfigure]{justification=centering}
 
+%--------- BEFORE ------------------------------------------------
+\begin{subfigure}{\linewidth}
+  \centering
+  \includegraphics[width=.50\linewidth]{images/test1.png}  %%% ← bicubic-LR crop
+  \caption{Wejście bicubic ($\times2$): rozmyte krawędzie, brak drobnych detali.}
+\end{subfigure}
+
+\medskip  % odstęp między obrazami
+
+%--------- AFTER -------------------------------------------------
+\begin{subfigure}{\linewidth}
+  \centering
+  \includegraphics[width=.50\linewidth]{images/output1.png}  %%% ← wynik SRCNN
+  \caption{Wynik SRCNN 9-5-5: ostre kontury i lepiej zrekonstruowane białe plamki.}
+\end{subfigure}
+
+\caption{Fragment obrazu \emph{Butterfly} z zestawu Set5 (skala $\times2$).  
+Różnica PSNR dla zaznaczonego cropa wynosi około 1.4 dB na korzyść SRCNN.}
+\label{fig:vis_butterfly}
+\end{figure}
 \subsection{Czas trenowania a dokładność}
 
 Dla wszystkich wariantów najwięcej zysku (>\SI{90}{\percent})
 uzyskujemy w pierwszych \(\approx\)70 k kroków
 (ok.~35 epok).  Kolejne spadki LR przynoszą już tylko
-\(\sim\)0.2 dB.  Jeśli ograniczyć budżet obliczeń,
-warto skrócić trening do \SI{1}{h} i zatrzymać się
-po pierwszym plateau.
+\(\sim\)0.2 dB.
 
 %─────────────────────────────────────────────────────────────────
 
