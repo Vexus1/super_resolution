@@ -82,12 +82,30 @@ rozszerzoną wersję $(128,64,1)$
         \)
 \end{enumerate}
 
-% \begin{figure}[h]
-%   \centering
-%   \includegraphics[width=.78\linewidth]{schema_srcnn.pdf}%%% <--- schemat blokowy
-%   \caption{Schemat oryginalnej architektury SRCNN (9-1-5).}
-%   \label{fig:srcnn_arch}
-% \end{figure}
+\begin{figure}[H]
+  \centering
+  \captionsetup[subfigure]{justification=centering}
+
+  \begin{subfigure}{.95\linewidth}
+    \centering
+    \includegraphics[width=\linewidth]{images/graph1.png} 
+    \caption{Widok „3D”: trzy kolejne warstwy konwolucyjne
+             odwzorowują patch LR na SR.}
+  \end{subfigure}
+
+  \medskip
+
+  \begin{subfigure}{.95\linewidth}
+    \centering
+    \includegraphics[width=\linewidth]{images/graph2.png} 
+    \caption{Ujęcie „2D”: pojedynczy piksel wyjściowy (czerwony)
+             rekonstruowany jest z~$f_3\times f_3$ sąsiednich patchy.}
+  \end{subfigure}
+
+  \caption{Ilustracja działania SRCNN –~ekstrakcja cech,
+           nieliniowe mapowanie i~rekonstrukcja.}
+  \label{fig:srcnn_diagrams}
+\end{figure}
 
 \paragraph{Receptive field.}
 Łączny zasięg to
@@ -586,6 +604,8 @@ następnie kolejne dwa plateaux przy 60 k i 90 k kroków.
 \begin{tabular}{@{}ccc@{}}
 \toprule
 Wariant & PSNR [$\,$dB] \\ \midrule
+SC & \textbf{31.42} \\
+Bicubic & \textbf{33.66} \\
 SRCNN 9-1-5  & \textbf{35.05} \\
 SRCNN 9-3-5  & \textbf{35.61} \\
 SRCNN 9-5-5  & \textbf{35.82} \\ \bottomrule

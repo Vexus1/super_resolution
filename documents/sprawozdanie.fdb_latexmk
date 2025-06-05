@@ -1,7 +1,7 @@
 # Fdb version 4
-["pdflatex"] 1749032554.0782 "/home/adrian/Desktop/programing/python/super_resolution/documents/sprawozdanie.tex" "sprawozdanie.pdf" "sprawozdanie" 1749032556.34188 0
+["pdflatex"] 1749037384.62129 "/home/adrian/Desktop/programing/python/super_resolution/documents/sprawozdanie.tex" "sprawozdanie.pdf" "sprawozdanie" 1749037396.16965 0
   "/etc/texmf/web2c/texmf.cnf" 1730709356.67384 475 c0e671620eb5563b2130f56340a5fde8 ""
-  "/home/adrian/Desktop/programing/python/super_resolution/documents/sprawozdanie.tex" 1749032553.56433 26067 b2179980b909634676bd8abbe9e647f1 ""
+  "/home/adrian/Desktop/programing/python/super_resolution/documents/sprawozdanie.tex" 1749037383.37543 26648 31cc485da32ba4132622350cbd461bde ""
   "/usr/share/texlive/texmf-dist/fonts/map/fontname/texfonts.map" 1577235249 3524 cb3e574dea2d1052e39280babc910dc8 ""
   "/usr/share/texlive/texmf-dist/fonts/tfm/jknappen/ec/ecbx1000.tfm" 1136768653 3584 2d666ecf6d466d8b007246bc2f94d9da ""
   "/usr/share/texlive/texmf-dist/fonts/tfm/jknappen/ec/ecbx1095.tfm" 1136768653 3584 21b378cca2e40816b0e6d74a4dc98f04 ""
@@ -64,6 +64,7 @@
   "/usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi9.pfb" 1248133631 36094 798f80770b3b148ceedd006d487db67c ""
   "/usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmr10.pfb" 1248133631 35752 024fb6c41858982481f6968b5fc26508 ""
   "/usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmr6.pfb" 1248133631 32734 69e00a6b65cedb993666e42eedb3d48f ""
+  "/usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmr7.pfb" 1248133631 32762 224316ccc9ad3ca0423a14971cfa7fc1 ""
   "/usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmr8.pfb" 1248133631 32726 0a1aea6fcd6468ee2cf64d891f5c43c8 ""
   "/usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmr9.pfb" 1248133631 33993 9b89b85fd2d9df0482bd47194d1d3bf3 ""
   "/usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy10.pfb" 1248133631 32569 5e5ddc8df908dea60932f3c484a54c0d ""
@@ -166,11 +167,13 @@
   "images/9_1_5.png" 1749026062.1609 39424 944cdeca77e1be62e973604516bd701a ""
   "images/9_3_5.png" 1749026062.1619 39249 060e87e515e2f1649a3bc37de50ff4ab ""
   "images/9_5_5.png" 1749026062.1629 39279 6b3d22230bd84e372f0ea7c236a86f30 ""
+  "images/graph1.png" 1749037146.67089 233921 8b73ec2112754ca7d711a0a20ae0e4f3 ""
+  "images/graph2.png" 1749037168.88717 232726 665effb56befc1a933eaad0fc30e2889 ""
   "images/output1.png" 1749029956.77561 1475271 ba319b5edc24b780ea8671014e5cb847 ""
   "images/test1.png" 1749029749.21825 1432925 f0da02e7faf8cf4a996a0a4d51452923 ""
-  "sprawozdanie.aux" 1749032556.14543 7372 e2011f1b2435288b4b975c2671173cfe "pdflatex"
-  "sprawozdanie.out" 1749032556.14643 4747 38200c5381e5ef83eac8581058965fea "pdflatex"
-  "sprawozdanie.tex" 1749032553.56433 26067 b2179980b909634676bd8abbe9e647f1 ""
+  "sprawozdanie.aux" 1749037394.7197 7728 df4b6de28452265627b7185c5b8f646f "pdflatex"
+  "sprawozdanie.out" 1749037394.7277 4747 38200c5381e5ef83eac8581058965fea "pdflatex"
+  "sprawozdanie.tex" 1749037383.37543 26648 31cc485da32ba4132622350cbd461bde ""
   (generated)
   "sprawozdanie.aux"
   "sprawozdanie.log"
